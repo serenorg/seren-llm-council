@@ -23,7 +23,6 @@ def _load_modules(env: dict) -> tuple[ModuleType, ModuleType]:
 @pytest.fixture()
 def env_values() -> dict:
     return {
-        "COUNCIL_WALLET": "0xtest",
         "X402_GATEWAY_URL": "https://x402.serendb.com",
         "CLAUDE_PUBLISHER_ID": "claude-id",
         "OPENAI_PUBLISHER_ID": "openai-id",
@@ -37,15 +36,11 @@ def env_values() -> dict:
 @pytest.mark.asyncio()
 async def test_query_model_success(env_values, respx_mock):
     config_module, client_module = _load_modules(env_values)
-    client = client_module.X402Client()
-    member = config_module.settings.get_council_members()[0]
+    client = client_module.X402Client(caller_wallet="0xtest")
+    member = config_module.settings.get_council_members()[0]  # Claude with /messages
 
-    route = respx_mock.post(
-        "https://x402.serendb.com/api/proxy/claude-id/v1/chat/completions"
-    ).mock(
-        return_value=Response(200, json={
-            "choices": [{"message": {"content": "Hello from Claude"}}]
-        })
+    route = respx_mock.post("https://x402.serendb.com/api/proxy").mock(
+        return_value=Response(200, json={"content": [{"text": "Hello from Claude"}]})
     )
 
     result = await client.query_model(member, "Hello?")
@@ -58,12 +53,14 @@ async def test_query_model_success(env_values, respx_mock):
 @pytest.mark.asyncio()
 async def test_query_model_payment_error(env_values, respx_mock):
     _, client_module = _load_modules(env_values)
-    client = client_module.X402Client()
-    member = client_module.CouncilMember("test", "claude-id", "claude")
+    client = client_module.X402Client(caller_wallet="0xtest")
+    member = client_module.CouncilMember(
+        "test", "test-id", "test-model", "/chat/completions", "openai"
+    )
 
-    respx_mock.post(
-        "https://x402.serendb.com/api/proxy/claude-id/v1/chat/completions"
-    ).mock(return_value=Response(402))
+    respx_mock.post("https://x402.serendb.com/api/proxy").mock(
+        return_value=Response(402)
+    )
 
     with pytest.raises(client_module.PaymentRequiredError):
         await client.query_model(member, "Hello?")
@@ -72,17 +69,14 @@ async def test_query_model_payment_error(env_values, respx_mock):
 @pytest.mark.asyncio()
 async def test_query_models_parallel_collects_results(env_values, respx_mock):
     config_module, client_module = _load_modules(env_values)
-    client = client_module.X402Client()
-    members = config_module.settings.get_council_members()[:2]
+    client = client_module.X402Client(caller_wallet="0xtest")
+    members = config_module.settings.get_council_members()[:2]  # Claude and GPT5
 
-    for member in members:
-        respx_mock.post(
-            f"https://x402.serendb.com/api/proxy/{member.publisher_id}/v1/chat/completions"
-        ).mock(
-            return_value=Response(200, json={
-                "choices": [{"message": {"content": f"Reply from {member.name}"}}]
-            })
-        )
+    responses = [
+        Response(200, json={"content": [{"text": "Reply from claude"}]}),
+        Response(200, json={"choices": [{"message": {"content": "Reply from gpt5"}}]}),
+    ]
+    respx_mock.post("https://x402.serendb.com/api/proxy").mock(side_effect=responses)
 
     results = await client.query_models_parallel(members, "Discuss")
 

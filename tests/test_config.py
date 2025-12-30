@@ -11,7 +11,6 @@ import pytest
 @pytest.fixture()
 def base_env() -> dict:
     return {
-        "COUNCIL_WALLET": "0xtest",
         "X402_GATEWAY_URL": "https://test.example.com",
         "CLAUDE_PUBLISHER_ID": "claude-id",
         "OPENAI_PUBLISHER_ID": "openai-id",
@@ -32,7 +31,6 @@ def _load_config(env: dict) -> ModuleType:
 def test_settings_load_required_fields(base_env):
     config_module = _load_config(base_env)
 
-    assert config_module.settings.council_wallet == "0xtest"
     assert config_module.settings.x402_gateway_url == "https://test.example.com"
 
 

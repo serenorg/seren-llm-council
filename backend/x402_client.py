@@ -35,22 +35,21 @@ class PaymentRequiredError(X402ClientError):
 class X402Client:
     """Async helper that communicates with Seren's x402 gateway."""
 
-    def __init__(self) -> None:
+    def __init__(self, caller_wallet: str) -> None:
         self.gateway_url = settings.x402_gateway_url
-        self.wallet = settings.council_wallet
+        self.caller_wallet = caller_wallet
         self.timeout = settings.request_timeout_seconds
         self.retry_attempts = settings.retry_attempts
         self._client: Optional[httpx.AsyncClient] = None
 
     def _get_headers(self) -> dict[str, str]:
         return {
-            "X-AGENT-WALLET": self.wallet,
-            "X-Payment-Delegation": "true",
             "Content-Type": "application/json",
+            "X-Payment-Delegation": "true",
         }
 
-    def _build_url(self, publisher_id: str) -> str:
-        return f"{self.gateway_url}/api/proxy/{publisher_id}/v1/chat/completions"
+    def _get_proxy_url(self) -> str:
+        return f"{self.gateway_url}/api/proxy"
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -62,32 +61,74 @@ class X402Client:
             await self._client.aclose()
             self._client = None
 
+    def _build_payload(
+        self,
+        member: CouncilMember,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+    ) -> dict:
+        if member.api_format == "anthropic":
+            messages: list[dict[str, str]] = [{"role": "user", "content": prompt}]
+            payload: dict = {
+                "model": member.model,
+                "messages": messages,
+                "max_tokens": 4096,
+            }
+            if system_prompt:
+                payload["system"] = system_prompt
+            return payload
+        else:
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            return {"model": member.model, "messages": messages}
+
+    def _parse_response(self, member: CouncilMember, body: dict) -> str:
+        if member.api_format == "anthropic":
+            return body["content"][0]["text"]
+        else:
+            return body["choices"][0]["message"]["content"]
+
+    def _build_gateway_request(
+        self,
+        member: CouncilMember,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+    ) -> dict:
+        """Build the x402 gateway proxy request envelope."""
+        llm_payload = self._build_payload(member, prompt, system_prompt)
+        return {
+            "publisherId": member.publisher_id,
+            "agentWallet": self.caller_wallet,
+            "request": {
+                "method": "POST",
+                "path": member.endpoint_path,
+                "body": llm_payload,
+            },
+        }
+
     async def query_model(
         self,
         member: CouncilMember,
         prompt: str,
         system_prompt: Optional[str] = None,
     ) -> LLMResponse:
-        messages: list[dict[str, str]] = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
-        payload = {"model": member.model, "messages": messages}
-        url = self._build_url(member.publisher_id)
+        gateway_request = self._build_gateway_request(member, prompt, system_prompt)
+        url = self._get_proxy_url()
 
         last_error: Optional[str] = None
         for attempt in range(self.retry_attempts + 1):
             try:
                 client = await self._get_client()
-                response = await client.post(url, headers=self._get_headers(), json=payload)
+                response = await client.post(url, headers=self._get_headers(), json=gateway_request)
 
                 if response.status_code == 402:
                     raise PaymentRequiredError(f"Insufficient balance for {member.name}")
 
                 response.raise_for_status()
                 body = response.json()
-                content = body["choices"][0]["message"]["content"]
+                content = self._parse_response(member, body)
                 return LLMResponse(
                     model_name=member.name,
                     content=content,

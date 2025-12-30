@@ -81,7 +81,6 @@ class FakeClient:
 @pytest.fixture()
 def env_values() -> dict:
     return {
-        "COUNCIL_WALLET": "0xtest",
         "X402_GATEWAY_URL": "https://x402.serendb.com",
         "CLAUDE_PUBLISHER_ID": "claude-id",
         "OPENAI_PUBLISHER_ID": "openai-id",
@@ -95,7 +94,10 @@ def env_values() -> dict:
 @pytest.mark.asyncio()
 async def test_stage1_opinions_returns_five(env_values):
     config_module, _, client_module, council_module = _load_council_modules(env_values)
-    service = council_module.CouncilService(client=FakeClient(client_module.LLMResponse))
+    service = council_module.CouncilService(
+        caller_wallet="0xtest",
+        client=FakeClient(client_module.LLMResponse),
+    )
 
     results = await service.stage1_opinions("Explain AI")
 
@@ -106,7 +108,10 @@ async def test_stage1_opinions_returns_five(env_values):
 @pytest.mark.asyncio()
 async def test_run_council_builds_response(env_values):
     config_module, models_module, client_module, council_module = _load_council_modules(env_values)
-    service = council_module.CouncilService(client=FakeClient(client_module.LLMResponse))
+    service = council_module.CouncilService(
+        caller_wallet="0xtest",
+        client=FakeClient(client_module.LLMResponse),
+    )
 
     response = await service.run_council("What is AGI?", chairman="custom-chair")
 
@@ -128,7 +133,8 @@ async def test_run_council_fails_when_not_enough_responses(env_values):
     _, _, client_module, council_module = _load_council_modules(env_values)
     failing = {"claude", "gpt5", "kimi"}
     service = council_module.CouncilService(
-        client=FakeClient(client_module.LLMResponse, failing_members=failing)
+        caller_wallet="0xtest",
+        client=FakeClient(client_module.LLMResponse, failing_members=failing),
     )
 
     with pytest.raises(RuntimeError):
