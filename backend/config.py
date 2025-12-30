@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     min_responses_required: int = 3
     retry_attempts: int = 1
     request_timeout_seconds: int = 120
+    flat_fee_usd: float = 15.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -38,13 +39,30 @@ class Settings(BaseSettings):
     )
 
     def get_council_members(self) -> list[CouncilMember]:
-        return [
+        members = [
             CouncilMember("claude", self.claude_publisher_id, "claude-sonnet-4-5-20241022"),
             CouncilMember("gpt5", self.openai_publisher_id, "gpt-5"),
             CouncilMember("kimi", self.moonshot_publisher_id, "kimi-k2"),
             CouncilMember("gemini", self.gemini_publisher_id, "gemini-2.5-pro"),
             CouncilMember("sonar", self.perplexity_publisher_id, "sonar"),
         ]
+        self._validate_member_models(members)
+        return members
+
+    def _validate_member_models(self, members: list[CouncilMember]) -> None:
+        expected_models = {
+            "claude": "claude-sonnet-4-5-20241022",
+            "gpt5": "gpt-5",
+            "kimi": "kimi-k2",
+            "gemini": "gemini-2.5-pro",
+            "sonar": "sonar",
+        }
+        for member in members:
+            expected = expected_models.get(member.name)
+            if expected and member.model != expected:
+                raise ValueError(
+                    f"Model mismatch for {member.name}: expected {expected}, got {member.model}"
+                )
 
     def get_chairman_config(self, chairman_override: Optional[str] = None) -> CouncilMember:
         model_name = chairman_override or self.default_chairman

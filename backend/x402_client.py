@@ -21,6 +21,7 @@ class LLMResponse:
     success: bool
     error: Optional[str] = None
     raw_response: Optional[dict] = None
+    rankings: Optional[list[str]] = None
 
 
 class X402ClientError(Exception):
@@ -39,6 +40,7 @@ class X402Client:
         self.wallet = settings.council_wallet
         self.timeout = settings.request_timeout_seconds
         self.retry_attempts = settings.retry_attempts
+        self._client: Optional[httpx.AsyncClient] = None
 
     def _get_headers(self) -> dict[str, str]:
         return {
@@ -49,6 +51,16 @@ class X402Client:
 
     def _build_url(self, publisher_id: str) -> str:
         return f"{self.gateway_url}/api/proxy/{publisher_id}/v1/chat/completions"
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=self.timeout)
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
 
     async def query_model(
         self,
@@ -67,8 +79,8 @@ class X402Client:
         last_error: Optional[str] = None
         for attempt in range(self.retry_attempts + 1):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(url, headers=self._get_headers(), json=payload)
+                client = await self._get_client()
+                response = await client.post(url, headers=self._get_headers(), json=payload)
 
                 if response.status_code == 402:
                     raise PaymentRequiredError(f"Insufficient balance for {member.name}")
@@ -123,4 +135,3 @@ class X402Client:
                 normalized.append(result)
 
         return normalized
-

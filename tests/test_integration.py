@@ -52,3 +52,5 @@ def test_full_stack_query_flow():
     payload = response.json()
     assert payload["final_answer"] == "chairman finalizes"
     assert len(payload["stage1_responses"]) == 5
+    assert payload["metadata"]["cost_usd"] == 15.0
+    assert payload["metadata"]["duration_ms"] >= 0

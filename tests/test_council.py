@@ -4,6 +4,7 @@ ABOUTME: Covers stage fan-out and degradation rules."""
 from importlib import reload
 from types import ModuleType
 from unittest.mock import patch
+import json
 import os
 import pytest
 
@@ -60,9 +61,19 @@ class FakeClient:
                 success=False,
                 error="model offline",
             )
+        if "Return ONLY valid JSON" in prompt:
+            payload = {
+                "analysis": f"{member.name} critique",
+                "rankings": ["R1", "R2", "R3"],
+            }
+            content = json.dumps(payload)
+        elif "chairman" in prompt.lower():
+            content = f"{member.name} finalizes"
+        else:
+            content = f"Opinion from {member.name}"
         return self.llm_response_cls(
             model_name=member.name,
-            content=f"{member.name} sees: {prompt[:20]}",
+            content=content,
             success=True,
         )
 
@@ -106,6 +117,10 @@ async def test_run_council_builds_response(env_values):
     }
     assert response.metadata.chairman == "custom-chair"
     assert len(response.metadata.models_succeeded) == 5
+    assert response.metadata.cost_usd == pytest.approx(config_module.settings.flat_fee_usd)
+    assert response.metadata.duration_ms >= 0
+    critique = response.stage2_critiques[next(iter(response.stage2_critiques))]
+    assert critique.rankings == ["R1", "R2", "R3"]
 
 
 @pytest.mark.asyncio()

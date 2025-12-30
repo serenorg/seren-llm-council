@@ -35,6 +35,8 @@ def _sample_response() -> models.CouncilResponse:
             models_succeeded=["claude"],
             models_failed=[],
             chairman="claude-opus-4.5",
+            cost_usd=15.0,
+            duration_ms=42,
         ),
     )
 

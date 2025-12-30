@@ -34,9 +34,10 @@ def test_council_response_accepts_nested_models():
             models_succeeded=["claude"],
             models_failed=[],
             chairman="claude-opus-4.5",
+            cost_usd=15.0,
+            duration_ms=123,
         ),
     )
 
     assert response.metadata.chairman == "claude-opus-4.5"
     assert response.stage1_responses["claude"].content == "Opinion"
-

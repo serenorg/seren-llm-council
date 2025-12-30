@@ -4,6 +4,8 @@ ABOUTME: Coordinates x402 requests and aggregates deliberation results."""
 from __future__ import annotations
 
 import asyncio
+import json
+from time import perf_counter
 from typing import List, Optional
 
 from backend.config import CouncilMember, settings
@@ -20,8 +22,9 @@ STAGE1_SYSTEM_PROMPT = (
 )
 STAGE2_PROMPT_TEMPLATE = (
     "You are critiquing peer responses to the question: {query}.\n\n"
-    "Here are the anonymous responses:\n{responses}\n\n"
-    "Provide a ranked list of the top responses and point out mistakes."
+    "Responses are anonymized as R1, R2, etc. Here they are:\n{responses}\n\n"
+    "Return ONLY valid JSON with keys 'analysis' (string) and 'rankings' (array"
+    " of response IDs from best to worst). Do not reveal model names."
 )
 STAGE3_PROMPT_TEMPLATE = (
     "You are the chairman synthesizing all insights.\nQuestion: {query}\n\n"
@@ -38,12 +41,37 @@ def _summarize_stage1(responses: List[LLMResponse]) -> str:
     return "\n".join(lines)
 
 
+def _summarize_stage1_anonymized(responses: List[LLMResponse]) -> str:
+    lines = []
+    for idx, response in enumerate(responses, start=1):
+        label = f"R{idx}"
+        status = response.content if response.success else f"ERROR: {response.error or 'unknown'}"
+        lines.append(f"{label}: {status}")
+    return "\n".join(lines)
+
+
 def _summarize_stage2(responses: List[LLMResponse]) -> str:
     lines = []
     for idx, response in enumerate(responses, start=1):
         status = response.content if response.success else f"ERROR: {response.error or 'unknown'}"
+        rankings = ", ".join(response.rankings or [])
+        if rankings:
+            status = f"{status}\nRankings: {rankings}"
         lines.append(f"Critique {idx} ({response.model_name}): {status}")
     return "\n".join(lines)
+
+
+def _parse_stage2_output(content: str) -> tuple[str, list[str]]:
+    try:
+        data = json.loads(content)
+        analysis = data.get("analysis") or ""
+        rankings = data.get("rankings") or []
+        if not isinstance(rankings, list):
+            rankings = []
+        rankings = [str(item) for item in rankings if isinstance(item, str)]
+        return analysis or content, rankings
+    except json.JSONDecodeError:
+        return content, []
 
 
 class CouncilService:
@@ -67,7 +95,7 @@ class CouncilService:
         stage1_responses: List[LLMResponse],
     ) -> List[LLMResponse]:
         members = self.settings.get_council_members()
-        stage1_summary = _summarize_stage1(stage1_responses)
+        stage1_summary = _summarize_stage1_anonymized(stage1_responses)
 
         async def _critique(member: CouncilMember) -> LLMResponse:
             prompt = STAGE2_PROMPT_TEMPLATE.format(query=query, responses=stage1_summary)
@@ -90,6 +118,10 @@ class CouncilService:
                     )
                 )
             else:
+                if result.success:
+                    analysis, rankings = _parse_stage2_output(result.content)
+                    result.content = analysis
+                    result.rankings = rankings
                 normalized.append(result)
 
         return normalized
@@ -113,6 +145,7 @@ class CouncilService:
         return result
 
     async def run_council(self, query: str, chairman: Optional[str] = None) -> CouncilResponse:
+        start = perf_counter()
         stage1 = await self.stage1_opinions(query)
         success_count = sum(1 for response in stage1 if response.success)
         if success_count < self.settings.min_responses_required:
@@ -121,6 +154,7 @@ class CouncilService:
         stage2 = await self.stage2_critiques(query, stage1)
         chairman_member = self.settings.get_chairman_config(chairman)
         final = await self.stage3_synthesis(query, stage1, stage2, chairman_member)
+        duration_ms = int((perf_counter() - start) * 1000)
 
         stage1_payload = {
             response.model_name: Stage1ResponseModel(
@@ -135,7 +169,7 @@ class CouncilService:
             response.model_name: Stage2CritiqueModel(
                 model=response.model_name,
                 analysis=response.content,
-                rankings=[],
+                rankings=response.rankings or [],
                 success=response.success,
                 error=response.error,
             )
@@ -145,6 +179,8 @@ class CouncilService:
             models_succeeded=[response.model_name for response in stage1 if response.success],
             models_failed=[response.model_name for response in stage1 if not response.success],
             chairman=chairman_member.model,
+            cost_usd=self.settings.flat_fee_usd,
+            duration_ms=duration_ms,
         )
 
         return CouncilResponse(
@@ -158,4 +194,3 @@ class CouncilService:
 async def run_council(query: str, chairman: Optional[str] = None) -> CouncilResponse:
     service = CouncilService()
     return await service.run_council(query, chairman=chairman)
-

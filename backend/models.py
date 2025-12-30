@@ -56,6 +56,8 @@ class CouncilMetadata(BaseModel):
     models_succeeded: List[str]
     models_failed: List[str]
     chairman: str
+    cost_usd: float
+    duration_ms: int
 
 
 class CouncilResponse(BaseModel):
@@ -67,4 +69,3 @@ class CouncilResponse(BaseModel):
     stage1_responses: Dict[str, Stage1ResponseModel]
     stage2_critiques: Dict[str, Stage2CritiqueModel]
     metadata: CouncilMetadata
-
