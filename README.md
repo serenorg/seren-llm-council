@@ -25,6 +25,8 @@ This is not a replacement for single-model inference. It's ~15x slower and costs
 - **Complex reasoning**: The query requires nuanced analysis that benefits from multiple approaches
 - **Catching hallucinations**: You've been burned by confidently-wrong single-model outputs
 
+**Built for AI agents.** Any MCP-enabled agent (Claude Code, Cursor, custom agents) can call the council as a tool. When your agent encounters a question where being wrong is costly, delegate to the council. The $0.75 flat fee is predictable—agents can budget for it.
+
 Think of it as the difference between asking one person vs. convening an expert panel.
 
 ## Usage
@@ -41,39 +43,32 @@ curl -X POST https://llm-council.serendb.com/v1/council/query \
 ```
 
 Response includes:
+
 - All 5 initial opinions
 - Cross-model critiques highlighting disagreements
 - Final synthesized answer with cited reasoning
 
 ### Via x402 MCP (for AI Agents)
 
-AI agents using Claude Code, Cursor, or other MCP-enabled tools can query the council directly through the x402 MCP server.
+AI agents using Claude Code, Cursor, or other MCP-enabled tools can query the council directly through the [x402 MCP server](https://github.com/serenorg/x402-mcp-server).
 
-**1. Install the x402 MCP server:**
+**1. Add to Claude Code:**
 
 ```bash
-npm install -g @anthropic/mcp-x402
+claude mcp add x402 -- npx @serendb/x402-mcp-server
 ```
 
-**2. Add to your MCP config** (`~/.claude/claude_desktop_config.json` or IDE settings):
+**2. Set environment variables** (or add to your shell profile):
 
-```json
-{
-  "mcpServers": {
-    "x402": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-x402"],
-      "env": {
-        "X402_WALLET_PRIVATE_KEY": "your-wallet-private-key"
-      }
-    }
-  }
-}
+```bash
+export X402_GATEWAY_URL=https://x402.serendb.com
+export WALLET_PRIVATE_KEY=0x...  # Your wallet private key
+export BASE_RPC_URL=https://mainnet.base.org
 ```
 
 **3. Query the council via MCP tools:**
 
-```
+```yaml
 Publisher ID: 081fc577-2cd9-425d-adf5-675af76e0b7a
 
 Tool: mcp__x402__pay_for_query
@@ -87,7 +82,7 @@ Parameters:
       chairman: "claude-opus-4.5"  # optional
 ```
 
-The MCP handles payment automatically from your prepaid balance.
+The MCP handles payment automatically from your prepaid balance. See the [x402 MCP server README](https://github.com/serenorg/x402-mcp-server) for setup with Cursor, Codex CLI, and other MCP clients.
 
 ### Local Development
 
@@ -108,7 +103,7 @@ uvicorn backend.main:app --reload --port 8000
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │  User Query                                     │
 └──────────────────┬──────────────────────────────┘
@@ -148,7 +143,7 @@ uvicorn backend.main:app --reload --port 8000
 
 ### Repo Layout
 
-```
+```text
 seren-llm-council/
 ├── backend/
 │   ├── config.py       # Council roster, publisher IDs, defaults
