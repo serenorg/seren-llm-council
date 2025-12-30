@@ -80,13 +80,31 @@ class Settings(BaseSettings):
 
     def get_chairman_config(self, chairman_override: Optional[str] = None) -> CouncilMember:
         model_name = chairman_override or self.default_chairman
-        return CouncilMember(
-            "chairman",
-            self.claude_publisher_id,
-            model_name,
-            endpoint_path="/messages",
-            api_format="anthropic",
-        )
+
+        # Route to correct publisher based on model name
+        if model_name.startswith("claude"):
+            return CouncilMember(
+                "chairman",
+                self.claude_publisher_id,
+                model_name,
+                endpoint_path="/messages",
+                api_format="anthropic",
+            )
+        elif model_name.startswith("gpt"):
+            return CouncilMember(
+                "chairman",
+                self.openai_publisher_id,
+                model_name,
+            )
+        else:
+            # Default to Claude for unknown models
+            return CouncilMember(
+                "chairman",
+                self.claude_publisher_id,
+                model_name,
+                endpoint_path="/messages",
+                api_format="anthropic",
+            )
 
 
 settings = Settings()
