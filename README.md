@@ -6,9 +6,9 @@ A multi-model AI consensus service that reduces hallucinations through structure
 
 ## Overview
 
-Individual LLMs hallucinate, miss edge cases, and have blind spots. `seren-llm-council` addresses this by running every query through a three-stage deliberation process:
+We never had a reason to build new SerenAI x402 micropayment services based on other SerenAi x402 micropayment services. This seemed like an interesting use case.  `seren-llm-council` demonstrates serenAI x402 service composability this by running every query through a three-stage deliberation process:
 
-1. **Parallel Opinions**: 5 models (Claude, GPT-5, Kimi K2, Gemini, Perplexity Sonar) independently answer
+1. **Parallel Opinions**: 5 models on SerenAI [bestseller's page](https://serendb.com/bestsellers) (Claude, GPT-5, Kimi K2, Gemini, Perplexity Sonar) independently answer
 2. **Mutual Critique**: Each model reviews and critiques the others' responses
 3. **Chairman Synthesis**: A coordinator model analyzes all opinions and critiques to produce a final answer
 
