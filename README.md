@@ -43,6 +43,50 @@ Response includes:
 - Cross-model critiques highlighting disagreements
 - Final synthesized answer with cited reasoning
 
+### Via x402 MCP (for AI Agents)
+
+AI agents using Claude Code, Cursor, or other MCP-enabled tools can query the council directly through the x402 MCP server.
+
+**1. Install the x402 MCP server:**
+
+```bash
+npm install -g @anthropic/mcp-x402
+```
+
+**2. Add to your MCP config** (`~/.claude/claude_desktop_config.json` or IDE settings):
+
+```json
+{
+  "mcpServers": {
+    "x402": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-x402"],
+      "env": {
+        "X402_WALLET_PRIVATE_KEY": "your-wallet-private-key"
+      }
+    }
+  }
+}
+```
+
+**3. Query the council via MCP tools:**
+
+```
+Publisher ID: 081fc577-2cd9-425d-adf5-675af76e0b7a
+
+Tool: mcp__x402__pay_for_query
+Parameters:
+  publisher_id: "081fc577-2cd9-425d-adf5-675af76e0b7a"
+  request:
+    method: "POST"
+    path: "/v1/council/query"
+    body:
+      query: "Your question here"
+      chairman: "claude-opus-4.5"  # optional
+```
+
+The MCP handles payment automatically from your prepaid balance.
+
 ### Local Development
 
 ```bash
