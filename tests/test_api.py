@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("COUNCIL_WALLET", "0xtest")
-os.environ.setdefault("X402_GATEWAY_URL", "https://x402.test")
+os.environ.setdefault("X402_GATEWAY_URL", "https://x402.serendb.com")
 os.environ.setdefault("CLAUDE_PUBLISHER_ID", "claude-id")
 os.environ.setdefault("OPENAI_PUBLISHER_ID", "openai-id")
 os.environ.setdefault("MOONSHOT_PUBLISHER_ID", "moonshot-id")

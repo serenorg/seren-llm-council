@@ -71,7 +71,7 @@ class FakeClient:
 def env_values() -> dict:
     return {
         "COUNCIL_WALLET": "0xtest",
-        "X402_GATEWAY_URL": "https://x402.test",
+        "X402_GATEWAY_URL": "https://x402.serendb.com",
         "CLAUDE_PUBLISHER_ID": "claude-id",
         "OPENAI_PUBLISHER_ID": "openai-id",
         "MOONSHOT_PUBLISHER_ID": "moonshot-id",
@@ -118,4 +118,3 @@ async def test_run_council_fails_when_not_enough_responses(env_values):
 
     with pytest.raises(RuntimeError):
         await service.run_council("Need advice")
-
