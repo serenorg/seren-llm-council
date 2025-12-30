@@ -2,7 +2,7 @@
 
 A multi-model AI consensus service that reduces hallucinations through structured deliberation between five diverse language models.
 
-> Inspired by [Andrej Karpathy's llm-council](https://github.com/karpathy/llm-council). This fork replaces OpenRouter with x402 micropayments, enabling pay-per-query access without API keys.
+> Inspired by [Andrej Karpathy's llm-council](https://github.com/karpathy/llm-council). This fork also replaces OpenRouter with [SerenAI's x402 micropayments Store](https://serendb.com/bestsellers) of API publishers, enabling composable pay-per-query access without API keys for AI agents.
 
 ## Overview
 
