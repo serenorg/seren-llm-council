@@ -2,6 +2,8 @@
 
 A multi-model AI consensus service that reduces hallucinations through structured deliberation between five diverse language models.
 
+> Inspired by [Andrej Karpathy's llm-council](https://github.com/karpathy/llm-council). This fork replaces OpenRouter with x402 micropayments, enabling pay-per-query access without API keys.
+
 ## Overview
 
 Individual LLMs hallucinate, miss edge cases, and have blind spots. `seren-llm-council` addresses this by running every query through a three-stage deliberation process:
