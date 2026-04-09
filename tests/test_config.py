@@ -67,9 +67,9 @@ def test_council_members_have_correct_endpoint_paths(base_env):
     members = config_module.settings.get_council_members()
     paths = {m.name: m.endpoint_path for m in members}
     assert paths == {
-        "claude": "/v1/messages",
-        "gpt5": "/v1/chat/completions",
-        "kimi": "/v1/chat/completions",
-        "gemini": "/v1/chat/completions",
+        "claude": "/messages",
+        "gpt5": "/chat/completions",
+        "kimi": "/chat/completions",
+        "gemini": "/chat/completions",
         "sonar": "/chat/completions",
     }

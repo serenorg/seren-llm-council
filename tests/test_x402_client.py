@@ -36,7 +36,7 @@ async def test_query_model_success(env_values, respx_mock):
     member = config_module.settings.get_council_members()[0]  # Claude
 
     route = respx_mock.post(
-        "https://api.serendb.com/publishers/anthropic-claude-api/v1/messages"
+        "https://api.serendb.com/publishers/anthropic-claude-api/messages"
     ).mock(
         return_value=Response(200, json={"content": [{"text": "Hello from Claude"}]})
     )
@@ -57,11 +57,11 @@ async def test_query_model_payment_error(env_values, respx_mock):
     _, client_module = _load_modules(env_values)
     client = client_module.X402Client()
     member = client_module.CouncilMember(
-        "test", "test-publisher", "test-model", "/v1/chat/completions", "openai"
+        "test", "test-publisher", "test-model", "/chat/completions", "openai"
     )
 
     respx_mock.post(
-        "https://api.serendb.com/publishers/test-publisher/v1/chat/completions"
+        "https://api.serendb.com/publishers/test-publisher/chat/completions"
     ).mock(return_value=Response(402))
 
     with pytest.raises(client_module.PaymentRequiredError):
@@ -75,12 +75,12 @@ async def test_query_models_parallel_collects_results(env_values, respx_mock):
     members = config_module.settings.get_council_members()[:2]  # Claude and GPT5
 
     respx_mock.post(
-        "https://api.serendb.com/publishers/anthropic-claude-api/v1/messages"
+        "https://api.serendb.com/publishers/anthropic-claude-api/messages"
     ).mock(
         return_value=Response(200, json={"content": [{"text": "Reply from claude"}]})
     )
     respx_mock.post(
-        "https://api.serendb.com/publishers/openai/v1/chat/completions"
+        "https://api.serendb.com/publishers/openai/chat/completions"
     ).mock(
         return_value=Response(200, json={"choices": [{"message": {"content": "Reply from gpt5"}}]})
     )

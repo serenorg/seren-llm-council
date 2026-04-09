@@ -47,13 +47,13 @@ class Settings(BaseSettings):
                 "claude",
                 "anthropic-claude-api",
                 "claude-sonnet-4-5",
-                endpoint_path="/v1/messages",
+                endpoint_path="/messages",
                 api_format="anthropic",
             ),
-            CouncilMember("gpt5", "openai", "gpt-5.2", endpoint_path="/v1/chat/completions"),
-            CouncilMember("kimi", "moonshot-ai", "kimi-k2-0711-preview", endpoint_path="/v1/chat/completions"),
-            CouncilMember("gemini", "google-gemini-3", "google/gemini-3-pro-preview", endpoint_path="/v1/chat/completions"),
-            CouncilMember("sonar", "perplexity", "sonar", endpoint_path="/chat/completions"),
+            CouncilMember("gpt5", "openai", "gpt-5.2"),
+            CouncilMember("kimi", "moonshot-ai", "kimi-k2-0711-preview"),
+            CouncilMember("gemini", "google-gemini-3", "google/gemini-3-pro-preview"),
+            CouncilMember("sonar", "perplexity", "sonar"),
         ]
         self._validate_member_models(members)
         return members
@@ -81,7 +81,7 @@ class Settings(BaseSettings):
                 "chairman",
                 "anthropic-claude-api",
                 model_name,
-                endpoint_path="/v1/messages",
+                endpoint_path="/messages",
                 api_format="anthropic",
             )
         elif model_name.startswith("gpt"):
@@ -89,14 +89,14 @@ class Settings(BaseSettings):
                 "chairman",
                 "openai",
                 model_name,
-                endpoint_path="/v1/chat/completions",
+                endpoint_path="/chat/completions",
             )
         else:
             return CouncilMember(
                 "chairman",
                 "anthropic-claude-api",
                 model_name,
-                endpoint_path="/v1/messages",
+                endpoint_path="/messages",
                 api_format="anthropic",
             )
 
