@@ -1,4 +1,4 @@
-"""ABOUTME: Async client for querying LLM publishers via x402.
+"""ABOUTME: Async client for querying LLM publishers via Seren gateway.
 ABOUTME: Handles retries, payment errors, and parallel fan-out."""
 
 from __future__ import annotations
@@ -33,11 +33,11 @@ class PaymentRequiredError(X402ClientError):
 
 
 class X402Client:
-    """Async helper that communicates with Seren's x402 gateway."""
+    """Async helper that communicates with Seren's gateway."""
 
-    def __init__(self, caller_wallet: str) -> None:
+    def __init__(self) -> None:
         self.gateway_url = settings.x402_gateway_url
-        self.caller_wallet = caller_wallet
+        self.api_key = settings.seren_api_key
         self.timeout = settings.request_timeout_seconds
         self.retry_attempts = settings.retry_attempts
         self._client: Optional[httpx.AsyncClient] = None
@@ -45,11 +45,11 @@ class X402Client:
     def _get_headers(self) -> dict[str, str]:
         return {
             "Content-Type": "application/json",
-            "X-Payment-Delegation": "true",
+            "Authorization": f"Bearer {self.api_key}",
         }
 
-    def _get_proxy_url(self) -> str:
-        return f"{self.gateway_url}/api/proxy"
+    def _get_model_url(self, member: CouncilMember) -> str:
+        return f"{self.gateway_url}/publishers/{member.slug}{member.endpoint_path}"
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -90,38 +90,20 @@ class X402Client:
         else:
             return body["choices"][0]["message"]["content"]
 
-    def _build_gateway_request(
-        self,
-        member: CouncilMember,
-        prompt: str,
-        system_prompt: Optional[str] = None,
-    ) -> dict:
-        """Build the x402 gateway proxy request envelope."""
-        llm_payload = self._build_payload(member, prompt, system_prompt)
-        return {
-            "publisherId": member.publisher_id,
-            "agentWallet": self.caller_wallet,
-            "request": {
-                "method": "POST",
-                "path": member.endpoint_path,
-                "body": llm_payload,
-            },
-        }
-
     async def query_model(
         self,
         member: CouncilMember,
         prompt: str,
         system_prompt: Optional[str] = None,
     ) -> LLMResponse:
-        gateway_request = self._build_gateway_request(member, prompt, system_prompt)
-        url = self._get_proxy_url()
+        payload = self._build_payload(member, prompt, system_prompt)
+        url = self._get_model_url(member)
 
         last_error: Optional[str] = None
         for attempt in range(self.retry_attempts + 1):
             try:
                 client = await self._get_client()
-                response = await client.post(url, headers=self._get_headers(), json=gateway_request)
+                response = await client.post(url, headers=self._get_headers(), json=payload)
 
                 if response.status_code == 402:
                     raise PaymentRequiredError(f"Insufficient balance for {member.name}")

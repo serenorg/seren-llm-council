@@ -8,20 +8,15 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("X402_GATEWAY_URL", "https://x402.serendb.com")
-os.environ.setdefault("CLAUDE_PUBLISHER_ID", "claude-id")
-os.environ.setdefault("OPENAI_PUBLISHER_ID", "openai-id")
-os.environ.setdefault("MOONSHOT_PUBLISHER_ID", "moonshot-id")
-os.environ.setdefault("GEMINI_PUBLISHER_ID", "gemini-id")
-os.environ.setdefault("PERPLEXITY_PUBLISHER_ID", "perplexity-id")
+os.environ.setdefault("X402_GATEWAY_URL", "https://api.serendb.com")
+os.environ.setdefault("SEREN_API_KEY", "test-api-key")
 
 from backend.main import app
 from backend.x402_client import LLMResponse
 
 
 class FakeX402Client:
-    def __init__(self, caller_wallet: str):
-        self.caller_wallet = caller_wallet
+    def __init__(self):
         self.stage1_counter = 0
 
     async def query_models_parallel(self, members, prompt, system_prompt=None):

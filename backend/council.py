@@ -77,8 +77,8 @@ def _parse_stage2_output(content: str) -> tuple[str, list[str]]:
 class CouncilService:
     """Coordinates the three-stage council deliberation."""
 
-    def __init__(self, caller_wallet: str, client: Optional[X402Client] = None) -> None:
-        self.client = client or X402Client(caller_wallet)
+    def __init__(self, client: Optional[X402Client] = None) -> None:
+        self.client = client or X402Client()
         self.settings = settings
 
     async def stage1_opinions(self, query: str) -> List[LLMResponse]:
@@ -189,8 +189,3 @@ class CouncilService:
             stage2_critiques=stage2_payload,
             metadata=metadata,
         )
-
-
-async def run_council(query: str, chairman: Optional[str] = None) -> CouncilResponse:
-    service = CouncilService()
-    return await service.run_council(query, chairman=chairman)

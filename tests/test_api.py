@@ -7,12 +7,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("X402_GATEWAY_URL", "https://x402.serendb.com")
-os.environ.setdefault("CLAUDE_PUBLISHER_ID", "claude-id")
-os.environ.setdefault("OPENAI_PUBLISHER_ID", "openai-id")
-os.environ.setdefault("MOONSHOT_PUBLISHER_ID", "moonshot-id")
-os.environ.setdefault("GEMINI_PUBLISHER_ID", "gemini-id")
-os.environ.setdefault("PERPLEXITY_PUBLISHER_ID", "perplexity-id")
+os.environ.setdefault("X402_GATEWAY_URL", "https://api.serendb.com")
+os.environ.setdefault("SEREN_API_KEY", "test-api-key")
 
 from backend import models
 from backend.main import app
@@ -59,7 +55,7 @@ def test_query_endpoint_returns_response():
 
     assert response.status_code == 200
     assert response.json()["final_answer"] == "Final"
-    mock_cls.assert_called_once_with(caller_wallet="0xtest")
+    mock_cls.assert_called_once_with()
 
 
 def test_query_endpoint_handles_payment_error():

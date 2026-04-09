@@ -20,7 +20,7 @@ async def query_council(
     payload: CouncilQuery,
     x_agent_wallet: str = Header(..., alias="X-AGENT-WALLET"),
 ) -> CouncilResponse:
-    service = CouncilService(caller_wallet=x_agent_wallet)
+    service = CouncilService()
     try:
         return await service.run_council(payload.query, chairman=payload.chairman)
     except PaymentRequiredError as exc:

@@ -23,11 +23,13 @@ User Query → FastAPI Backend → x402 Gateway → Multiple LLM Publishers
 - Storage: JSON files in `data/conversations/`
 - Payments: x402 protocol via Seren gateway
 
-**Key x402 Publishers:**
-- Anthropic Claude: `d94e8d25-1561-46f7-88d1-9ee9a28e0e2a`
-- OpenAI: `df224e6a-def9-498a-a3c0-0db89b883753`
-- Moonshot (Kimi K2): `25a50482-afaa-4772-8098-8b10533a8281`
-- Perplexity (Sonar): `9403e027-fd7e-4c90-8492-ef97bd4c596b`
+**Council Publisher Slugs:**
+
+- Anthropic Claude: `anthropic-claude-api`
+- OpenAI (GPT-5): `openai`
+- Moonshot (Kimi K2): `moonshot-ai`
+- Google Gemini: `google-gemini-3`
+- Perplexity (Sonar): `perplexity`
 
 ## Build Commands
 
@@ -67,9 +69,8 @@ pytest -k "test_name"     # Run specific test
 ## Environment Variables
 
 ```bash
-AGENT_WALLET=0x...          # Required: Your agent wallet address
-X402_GATEWAY_URL=https://x402.serendb.com
-PAYMENT_DELEGATION=true     # Auto-pay from prepaid balance
+X402_GATEWAY_URL=https://api.serendb.com  # Seren gateway base URL
+SEREN_API_KEY=...                         # Required: API key for gateway auth
 DATA_DIR=data/conversations
 ```
 
