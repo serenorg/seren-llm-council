@@ -23,12 +23,8 @@ def _load_modules(env: dict) -> tuple[ModuleType, ModuleType]:
 @pytest.fixture()
 def env_values() -> dict:
     return {
-        "X402_GATEWAY_URL": "https://x402.serendb.com",
-        "CLAUDE_PUBLISHER_ID": "claude-id",
-        "OPENAI_PUBLISHER_ID": "openai-id",
-        "MOONSHOT_PUBLISHER_ID": "moonshot-id",
-        "GEMINI_PUBLISHER_ID": "gemini-id",
-        "PERPLEXITY_PUBLISHER_ID": "perplexity-id",
+        "X402_GATEWAY_URL": "https://api.serendb.com",
+        "SEREN_API_KEY": "test-api-key",
         "RETRY_ATTEMPTS": "1",
     }
 
@@ -36,10 +32,12 @@ def env_values() -> dict:
 @pytest.mark.asyncio()
 async def test_query_model_success(env_values, respx_mock):
     config_module, client_module = _load_modules(env_values)
-    client = client_module.X402Client(caller_wallet="0xtest")
-    member = config_module.settings.get_council_members()[0]  # Claude with /messages
+    client = client_module.X402Client()
+    member = config_module.settings.get_council_members()[0]  # Claude
 
-    route = respx_mock.post("https://x402.serendb.com/api/proxy").mock(
+    route = respx_mock.post(
+        "https://api.serendb.com/publishers/anthropic-claude-api/v1/messages"
+    ).mock(
         return_value=Response(200, json={"content": [{"text": "Hello from Claude"}]})
     )
 
@@ -49,18 +47,22 @@ async def test_query_model_success(env_values, respx_mock):
     assert result.success is True
     assert result.content == "Hello from Claude"
 
+    request = route.calls[0].request
+    assert request.headers["authorization"] == "Bearer test-api-key"
+    assert "x-payment-delegation" not in request.headers
+
 
 @pytest.mark.asyncio()
 async def test_query_model_payment_error(env_values, respx_mock):
     _, client_module = _load_modules(env_values)
-    client = client_module.X402Client(caller_wallet="0xtest")
+    client = client_module.X402Client()
     member = client_module.CouncilMember(
-        "test", "test-id", "test-model", "/chat/completions", "openai"
+        "test", "test-publisher", "test-model", "/v1/chat/completions", "openai"
     )
 
-    respx_mock.post("https://x402.serendb.com/api/proxy").mock(
-        return_value=Response(402)
-    )
+    respx_mock.post(
+        "https://api.serendb.com/publishers/test-publisher/v1/chat/completions"
+    ).mock(return_value=Response(402))
 
     with pytest.raises(client_module.PaymentRequiredError):
         await client.query_model(member, "Hello?")
@@ -69,14 +71,19 @@ async def test_query_model_payment_error(env_values, respx_mock):
 @pytest.mark.asyncio()
 async def test_query_models_parallel_collects_results(env_values, respx_mock):
     config_module, client_module = _load_modules(env_values)
-    client = client_module.X402Client(caller_wallet="0xtest")
+    client = client_module.X402Client()
     members = config_module.settings.get_council_members()[:2]  # Claude and GPT5
 
-    responses = [
-        Response(200, json={"content": [{"text": "Reply from claude"}]}),
-        Response(200, json={"choices": [{"message": {"content": "Reply from gpt5"}}]}),
-    ]
-    respx_mock.post("https://x402.serendb.com/api/proxy").mock(side_effect=responses)
+    respx_mock.post(
+        "https://api.serendb.com/publishers/anthropic-claude-api/v1/messages"
+    ).mock(
+        return_value=Response(200, json={"content": [{"text": "Reply from claude"}]})
+    )
+    respx_mock.post(
+        "https://api.serendb.com/publishers/openai/v1/chat/completions"
+    ).mock(
+        return_value=Response(200, json={"choices": [{"message": {"content": "Reply from gpt5"}}]})
+    )
 
     results = await client.query_models_parallel(members, "Discuss")
 

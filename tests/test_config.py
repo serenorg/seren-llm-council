@@ -12,11 +12,7 @@ import pytest
 def base_env() -> dict:
     return {
         "X402_GATEWAY_URL": "https://test.example.com",
-        "CLAUDE_PUBLISHER_ID": "claude-id",
-        "OPENAI_PUBLISHER_ID": "openai-id",
-        "MOONSHOT_PUBLISHER_ID": "moonshot-id",
-        "GEMINI_PUBLISHER_ID": "gemini-id",
-        "PERPLEXITY_PUBLISHER_ID": "perplexity-id",
+        "SEREN_API_KEY": "test-api-key",
     }
 
 
@@ -49,3 +45,31 @@ def test_get_chairman_respects_override(base_env):
     chairman = config_module.settings.get_chairman_config("gpt-5")
     assert chairman.model == "gpt-5"
     assert chairman.name == "chairman"
+
+
+def test_council_members_have_correct_slugs(base_env):
+    config_module = _load_config(base_env)
+
+    members = config_module.settings.get_council_members()
+    slugs = {m.name: m.slug for m in members}
+    assert slugs == {
+        "claude": "anthropic-claude-api",
+        "gpt5": "openai",
+        "kimi": "moonshot-ai",
+        "gemini": "google-gemini-3",
+        "sonar": "perplexity",
+    }
+
+
+def test_council_members_have_correct_endpoint_paths(base_env):
+    config_module = _load_config(base_env)
+
+    members = config_module.settings.get_council_members()
+    paths = {m.name: m.endpoint_path for m in members}
+    assert paths == {
+        "claude": "/v1/messages",
+        "gpt5": "/v1/chat/completions",
+        "kimi": "/v1/chat/completions",
+        "gemini": "/v1/chat/completions",
+        "sonar": "/chat/completions",
+    }

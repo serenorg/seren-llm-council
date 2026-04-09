@@ -81,12 +81,8 @@ class FakeClient:
 @pytest.fixture()
 def env_values() -> dict:
     return {
-        "X402_GATEWAY_URL": "https://x402.serendb.com",
-        "CLAUDE_PUBLISHER_ID": "claude-id",
-        "OPENAI_PUBLISHER_ID": "openai-id",
-        "MOONSHOT_PUBLISHER_ID": "moonshot-id",
-        "GEMINI_PUBLISHER_ID": "gemini-id",
-        "PERPLEXITY_PUBLISHER_ID": "perplexity-id",
+        "X402_GATEWAY_URL": "https://api.serendb.com",
+        "SEREN_API_KEY": "test-api-key",
         "MIN_RESPONSES_REQUIRED": "3",
     }
 
@@ -95,7 +91,6 @@ def env_values() -> dict:
 async def test_stage1_opinions_returns_five(env_values):
     config_module, _, client_module, council_module = _load_council_modules(env_values)
     service = council_module.CouncilService(
-        caller_wallet="0xtest",
         client=FakeClient(client_module.LLMResponse),
     )
 
@@ -109,7 +104,6 @@ async def test_stage1_opinions_returns_five(env_values):
 async def test_run_council_builds_response(env_values):
     config_module, models_module, client_module, council_module = _load_council_modules(env_values)
     service = council_module.CouncilService(
-        caller_wallet="0xtest",
         client=FakeClient(client_module.LLMResponse),
     )
 
@@ -133,7 +127,6 @@ async def test_run_council_fails_when_not_enough_responses(env_values):
     _, _, client_module, council_module = _load_council_modules(env_values)
     failing = {"claude", "gpt5", "kimi"}
     service = council_module.CouncilService(
-        caller_wallet="0xtest",
         client=FakeClient(client_module.LLMResponse, failing_members=failing),
     )
 
