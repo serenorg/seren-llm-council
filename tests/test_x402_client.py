@@ -38,7 +38,10 @@ async def test_query_model_success(env_values, respx_mock):
     route = respx_mock.post(
         "https://api.serendb.com/publishers/seren-models/chat/completions"
     ).mock(
-        return_value=Response(200, json={"choices": [{"message": {"content": "Hello from Claude"}}]})
+        return_value=Response(200, json={
+            "status": 200,
+            "body": {"choices": [{"message": {"content": "Hello from Claude"}}]},
+        })
     )
 
     result = await client.query_model(member, "Hello?")
@@ -77,12 +80,18 @@ async def test_query_models_parallel_collects_results(env_values, respx_mock):
     respx_mock.post(
         "https://api.serendb.com/publishers/seren-models/chat/completions"
     ).mock(
-        return_value=Response(200, json={"choices": [{"message": {"content": "Reply from claude"}}]})
+        return_value=Response(200, json={
+            "status": 200,
+            "body": {"choices": [{"message": {"content": "Reply from claude"}}]},
+        })
     )
     respx_mock.post(
         "https://api.serendb.com/publishers/openai/chat/completions"
     ).mock(
-        return_value=Response(200, json={"choices": [{"message": {"content": "Reply from gpt5"}}]})
+        return_value=Response(200, json={
+            "status": 200,
+            "body": {"choices": [{"message": {"content": "Reply from gpt5"}}]},
+        })
     )
 
     results = await client.query_models_parallel(members, "Discuss")

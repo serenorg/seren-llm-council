@@ -110,6 +110,14 @@ class X402Client:
 
                 response.raise_for_status()
                 body = response.json()
+                # Gateway wraps responses: {"status": 200, "body": {…actual…}}
+                if "body" in body and "status" in body:
+                    upstream_status = body["status"]
+                    if upstream_status >= 400:
+                        raise RuntimeError(
+                            f"{member.name} upstream {upstream_status}: {body['body']}"
+                        )
+                    body = body["body"]
                 content = self._parse_response(member, body)
                 return LLMResponse(
                     model_name=member.name,
