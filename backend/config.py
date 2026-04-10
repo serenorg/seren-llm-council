@@ -43,16 +43,10 @@ class Settings(BaseSettings):
 
     def get_council_members(self) -> list[CouncilMember]:
         members = [
-            CouncilMember(
-                "claude",
-                "anthropic-claude-api",
-                "claude-sonnet-4-5",
-                endpoint_path="/messages",
-                api_format="anthropic",
-            ),
+            CouncilMember("claude", "seren-models", "anthropic/claude-sonnet-4-5"),
             CouncilMember("gpt5", "openai", "gpt-5.2"),
             CouncilMember("kimi", "moonshot-ai", "kimi-k2-0711-preview"),
-            CouncilMember("gemini", "google-gemini-3", "google/gemini-3-pro-preview"),
+            CouncilMember("glm", "seren-models", "z-ai/glm-5.1"),
             CouncilMember("sonar", "perplexity", "sonar"),
         ]
         self._validate_member_models(members)
@@ -60,10 +54,10 @@ class Settings(BaseSettings):
 
     def _validate_member_models(self, members: list[CouncilMember]) -> None:
         expected_models = {
-            "claude": "claude-sonnet-4-5",
+            "claude": "anthropic/claude-sonnet-4-5",
             "gpt5": "gpt-5.2",
             "kimi": "kimi-k2-0711-preview",
-            "gemini": "google/gemini-3-pro-preview",
+            "glm": "z-ai/glm-5.1",
             "sonar": "sonar",
         }
         for member in members:
@@ -79,25 +73,20 @@ class Settings(BaseSettings):
         if model_name.startswith("claude"):
             return CouncilMember(
                 "chairman",
-                "anthropic-claude-api",
-                model_name,
-                endpoint_path="/messages",
-                api_format="anthropic",
+                "seren-models",
+                f"anthropic/{model_name}",
             )
         elif model_name.startswith("gpt"):
             return CouncilMember(
                 "chairman",
                 "openai",
                 model_name,
-                endpoint_path="/chat/completions",
             )
         else:
             return CouncilMember(
                 "chairman",
-                "anthropic-claude-api",
+                "seren-models",
                 model_name,
-                endpoint_path="/messages",
-                api_format="anthropic",
             )
 
 

@@ -53,10 +53,10 @@ def test_council_members_have_correct_slugs(base_env):
     members = config_module.settings.get_council_members()
     slugs = {m.name: m.slug for m in members}
     assert slugs == {
-        "claude": "anthropic-claude-api",
+        "claude": "seren-models",
         "gpt5": "openai",
         "kimi": "moonshot-ai",
-        "gemini": "google-gemini-3",
+        "glm": "seren-models",
         "sonar": "perplexity",
     }
 
@@ -67,9 +67,9 @@ def test_council_members_have_correct_endpoint_paths(base_env):
     members = config_module.settings.get_council_members()
     paths = {m.name: m.endpoint_path for m in members}
     assert paths == {
-        "claude": "/messages",
+        "claude": "/chat/completions",
         "gpt5": "/chat/completions",
         "kimi": "/chat/completions",
-        "gemini": "/chat/completions",
+        "glm": "/chat/completions",
         "sonar": "/chat/completions",
     }
