@@ -29,6 +29,11 @@ class Settings(BaseSettings):
 
     x402_gateway_url: str = Field(..., description="Seren gateway base URL")
     seren_api_key: str = Field(..., description="API key for Seren gateway")
+    council_origin_secret: str = Field(
+        ...,
+        min_length=32,
+        description="Secret the Seren publisher sends with every query",
+    )
 
     default_chairman: str = "claude-opus-4-5"
     min_responses_required: int = 3
@@ -67,8 +72,22 @@ class Settings(BaseSettings):
                     f"Model mismatch for {member.name}: expected {expected}, got {member.model}"
                 )
 
+    def get_chairman_models(self) -> list[str]:
+        """Models a caller may name as chairman: the default and each council member's."""
+        return [self.default_chairman] + [member.model for member in self.get_council_members()]
+
     def get_chairman_config(self, chairman_override: Optional[str] = None) -> CouncilMember:
         model_name = chairman_override or self.default_chairman
+
+        for member in self.get_council_members():
+            if member.model == model_name:
+                return CouncilMember(
+                    "chairman",
+                    member.slug,
+                    member.model,
+                    member.endpoint_path,
+                    member.api_format,
+                )
 
         if model_name.startswith("claude"):
             return CouncilMember(

@@ -10,9 +10,12 @@ from fastapi.testclient import TestClient
 
 os.environ.setdefault("X402_GATEWAY_URL", "https://api.serendb.com")
 os.environ.setdefault("SEREN_API_KEY", "test-api-key")
+os.environ.setdefault("COUNCIL_ORIGIN_SECRET", "test-council-origin-secret-0123456789")
 
 from backend.main import app
 from backend.x402_client import LLMResponse
+
+ORIGIN_SECRET = os.environ["COUNCIL_ORIGIN_SECRET"]
 
 
 class FakeX402Client:
@@ -43,7 +46,7 @@ def test_full_stack_query_flow():
         response = client.post(
             "/v1/council/query",
             json={"query": "Explain AI"},
-            headers={"X-AGENT-WALLET": "0xtest"},
+            headers={"X-AGENT-WALLET": "0xtest", "X-Council-Origin-Secret": ORIGIN_SECRET},
         )
 
     assert response.status_code == 200

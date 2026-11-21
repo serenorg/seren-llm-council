@@ -1,8 +1,12 @@
 """ABOUTME: FastAPI entrypoint for Seren LLM Council service.
 ABOUTME: Exposes health and council query endpoints."""
 
-from fastapi import FastAPI, Header, HTTPException
+import hmac
+from typing import Optional
 
+from fastapi import Depends, FastAPI, Header, HTTPException
+
+from backend.config import settings
 from backend.council import CouncilService
 from backend.models import CouncilQuery, CouncilResponse
 from backend.x402_client import PaymentRequiredError
@@ -15,7 +19,20 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/v1/council/query", response_model=CouncilResponse)
+def require_origin_secret(
+    x_council_origin_secret: Optional[str] = Header(None, alias="X-Council-Origin-Secret"),
+) -> None:
+    """Refuses a query that does not carry the secret the Seren publisher sends."""
+    supplied = (x_council_origin_secret or "").encode()
+    if not hmac.compare_digest(supplied, settings.council_origin_secret.encode()):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@app.post(
+    "/v1/council/query",
+    response_model=CouncilResponse,
+    dependencies=[Depends(require_origin_secret)],
+)
 async def query_council(
     payload: CouncilQuery,
     x_agent_wallet: str = Header(..., alias="X-AGENT-WALLET"),

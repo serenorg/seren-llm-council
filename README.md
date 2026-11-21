@@ -31,23 +31,6 @@ Think of it as the difference between asking one person vs. convening an expert 
 
 ## Usage
 
-### Production API
-
-```bash
-curl -X POST https://llm-council.serendb.com/v1/council/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "What are the failure modes of RAG systems in production?",
-    "chairman": "claude-opus-4.5"
-  }'
-```
-
-Response includes:
-
-- All 5 initial opinions
-- Cross-model critiques highlighting disagreements
-- Final synthesized answer with cited reasoning
-
 ### Via x402 MCP (for AI Agents)
 
 AI agents using Claude Code, Cursor, or other MCP-enabled tools can query the council directly through the [x402 MCP server](https://github.com/serenorg/x402-mcp-server).
@@ -79,8 +62,14 @@ Parameters:
     path: "/v1/council/query"
     body:
       query: "Your question here"
-      chairman: "claude-opus-4.5"  # optional
+      chairman: "claude-opus-4-5"  # optional: the default, or one of the five council models
 ```
+
+Response includes:
+
+- All 5 initial opinions
+- Cross-model critiques highlighting disagreements
+- Final synthesized answer with cited reasoning
 
 The MCP handles payment automatically from your prepaid balance. See the [x402 MCP server README](https://github.com/serenorg/x402-mcp-server) for setup with Cursor, Codex CLI, and other MCP clients.
 

@@ -83,6 +83,7 @@ def env_values() -> dict:
     return {
         "X402_GATEWAY_URL": "https://api.serendb.com",
         "SEREN_API_KEY": "test-api-key",
+        "COUNCIL_ORIGIN_SECRET": "test-council-origin-secret-0123456789",
         "MIN_RESPONSES_REQUIRED": "3",
     }
 
@@ -107,14 +108,14 @@ async def test_run_council_builds_response(env_values):
         client=FakeClient(client_module.LLMResponse),
     )
 
-    response = await service.run_council("What is AGI?", chairman="custom-chair")
+    response = await service.run_council("What is AGI?", chairman="gpt-5.2")
 
     assert isinstance(response, models_module.CouncilResponse)
     assert response.final_answer
     assert set(response.stage1_responses.keys()) == {
         member.name for member in config_module.settings.get_council_members()
     }
-    assert response.metadata.chairman == "custom-chair"
+    assert response.metadata.chairman == "gpt-5.2"
     assert len(response.metadata.models_succeeded) == 5
     assert response.metadata.cost_usd == pytest.approx(config_module.settings.flat_fee_usd)
     assert response.metadata.duration_ms >= 0
