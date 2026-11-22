@@ -146,6 +146,11 @@ class CouncilService:
 
     async def run_council(self, query: str, chairman: Optional[str] = None) -> CouncilResponse:
         start = perf_counter()
+        # Checked before any model is called, so a refused query costs nothing.
+        chairman_models = self.settings.get_chairman_models()
+        if chairman and chairman not in chairman_models:
+            raise RuntimeError(f"Chairman must be one of: {', '.join(chairman_models)}")
+
         stage1 = await self.stage1_opinions(query)
         success_count = sum(1 for response in stage1 if response.success)
         if success_count < self.settings.min_responses_required:

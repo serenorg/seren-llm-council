@@ -25,6 +25,7 @@ def env_values() -> dict:
     return {
         "X402_GATEWAY_URL": "https://api.serendb.com",
         "SEREN_API_KEY": "test-api-key",
+        "COUNCIL_ORIGIN_SECRET": "test-council-origin-secret-0123456789",
         "RETRY_ATTEMPTS": "1",
     }
 

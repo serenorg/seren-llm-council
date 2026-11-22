@@ -71,6 +71,7 @@ pytest -k "test_name"     # Run specific test
 ```bash
 X402_GATEWAY_URL=https://api.serendb.com  # Seren gateway base URL
 SEREN_API_KEY=...                         # Required: API key for gateway auth
+COUNCIL_ORIGIN_SECRET=...                 # Required: secret the Seren publisher sends with every query
 DATA_DIR=data/conversations
 ```
 

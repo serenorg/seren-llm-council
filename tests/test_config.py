@@ -13,6 +13,7 @@ def base_env() -> dict:
     return {
         "X402_GATEWAY_URL": "https://test.example.com",
         "SEREN_API_KEY": "test-api-key",
+        "COUNCIL_ORIGIN_SECRET": "test-council-origin-secret-0123456789",
     }
 
 

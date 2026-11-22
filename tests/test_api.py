@@ -9,10 +9,13 @@ from fastapi.testclient import TestClient
 
 os.environ.setdefault("X402_GATEWAY_URL", "https://api.serendb.com")
 os.environ.setdefault("SEREN_API_KEY", "test-api-key")
+os.environ.setdefault("COUNCIL_ORIGIN_SECRET", "test-council-origin-secret-0123456789")
 
 from backend import models
 from backend.main import app
 from backend.x402_client import PaymentRequiredError
+
+ORIGIN_SECRET = os.environ["COUNCIL_ORIGIN_SECRET"]
 
 
 def _sample_response() -> models.CouncilResponse:
@@ -50,7 +53,7 @@ def test_query_endpoint_returns_response():
         response = client.post(
             "/v1/council/query",
             json={"query": "Help"},
-            headers={"X-AGENT-WALLET": "0xtest"},
+            headers={"X-AGENT-WALLET": "0xtest", "X-Council-Origin-Secret": ORIGIN_SECRET},
         )
 
     assert response.status_code == 200
@@ -69,7 +72,7 @@ def test_query_endpoint_handles_payment_error():
         response = client.post(
             "/v1/council/query",
             json={"query": "Help"},
-            headers={"X-AGENT-WALLET": "0xtest"},
+            headers={"X-AGENT-WALLET": "0xtest", "X-Council-Origin-Secret": ORIGIN_SECRET},
         )
 
     assert response.status_code == 402
@@ -79,7 +82,11 @@ def test_query_endpoint_handles_payment_error():
 def test_query_endpoint_requires_wallet_header():
     client = TestClient(app)
 
-    response = client.post("/v1/council/query", json={"query": "Help"})
+    response = client.post(
+        "/v1/council/query",
+        json={"query": "Help"},
+        headers={"X-Council-Origin-Secret": ORIGIN_SECRET},
+    )
 
     assert response.status_code == 422
     assert "x-agent-wallet" in response.text.lower()
